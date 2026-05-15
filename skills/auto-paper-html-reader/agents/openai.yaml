@@ -1,0 +1,3 @@
+display_name: Auto Paper HTML Reader
+short_description: Read papers into interactive HTML reports.
+default_prompt: Read this paper and publish a structured Chinese HTML report with plain-language paragraph buttons and a detailed technical roadmap at http://127.0.0.1:8000/<paper-name>.html.

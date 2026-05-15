@@ -1,0 +1,10 @@
+.DS_Store
+.idea/
+__pycache__/
+*.pyc
+
+# Generated reports and paper assets
+*.html
+sources/
+assets/
+main.py
