@@ -47,15 +47,34 @@ REQUIRED_TOKENS = [
     "大白话",
     "data-plain=",
     "plain-toggle",
+    "image-zoom",
+    "image-lightbox",
+    "image-lightbox-img",
     "technical-roadmap",
     "related-work-comparison",
     "writing-logic",
     "logic-timeline",
     "figure-panel",
     "roadmap-figure",
-    "figure-zoom",
     "roadmap-step",
 ]
+
+VOID_TAGS = {
+    "area",
+    "base",
+    "br",
+    "col",
+    "embed",
+    "hr",
+    "img",
+    "input",
+    "link",
+    "meta",
+    "param",
+    "source",
+    "track",
+    "wbr",
+}
 
 
 class ReportParser(HTMLParser):
@@ -64,17 +83,21 @@ class ReportParser(HTMLParser):
         self.ids: set[str] = set()
         self.classes: set[str] = set()
         self.img_srcs: list[str] = []
+        self.img_context_classes: list[tuple[str, set[str]]] = []
         self.section_img_srcs: dict[str, list[str]] = {}
         self.section_classes: dict[str, set[str]] = {}
-        self.section_zoom_hrefs: dict[str, list[str]] = {}
         self.tables = 0
         self.data_plain_count = 0
         self.current_section: str | None = None
         self.section_text: dict[str, list[str]] = {}
+        self.element_stack: list[tuple[str, set[str]]] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attrs_dict = {key: value or "" for key, value in attrs}
         tag_classes = attrs_dict.get("class", "").split()
+        context_classes: set[str] = set()
+        for _, classes in self.element_stack:
+            context_classes.update(classes)
         if "id" in attrs_dict:
             self.ids.add(attrs_dict["id"])
         if "class" in attrs_dict:
@@ -86,21 +109,26 @@ class ReportParser(HTMLParser):
                 self.section_text.setdefault(self.current_section, [])
         if self.current_section:
             self.section_classes.setdefault(self.current_section, set()).update(tag_classes)
-            if tag == "a" and "figure-zoom" in tag_classes:
-                self.section_zoom_hrefs.setdefault(self.current_section, []).append(attrs_dict.get("href", ""))
         if tag == "img":
             src = attrs_dict.get("src", "")
             self.img_srcs.append(src)
+            self.img_context_classes.append((src, context_classes | set(tag_classes)))
             if self.current_section:
                 self.section_img_srcs.setdefault(self.current_section, []).append(src)
         if tag == "table":
             self.tables += 1
         if "data-plain" in attrs_dict:
             self.data_plain_count += 1
+        if tag not in VOID_TAGS:
+            self.element_stack.append((tag, set(tag_classes)))
 
     def handle_endtag(self, tag: str) -> None:
         if tag == "section":
             self.current_section = None
+        for index in range(len(self.element_stack) - 1, -1, -1):
+            if self.element_stack[index][0] == tag:
+                del self.element_stack[index:]
+                break
 
     def handle_data(self, data: str) -> None:
         if self.current_section:
@@ -227,17 +255,15 @@ def validate(html_path: Path) -> dict[str, object]:
             + ", ".join(technical_imgs)
         )
     else:
-        technical_src = technical_imgs[0]
         technical_classes = parser.section_classes.get("technical-roadmap", set())
-        technical_zoom_hrefs = parser.section_zoom_hrefs.get("technical-roadmap", [])
         if "roadmap-figure" not in technical_classes:
             missing.append("technical-roadmap image must be inside <figure class=\"figure-panel roadmap-figure\">")
-        if "figure-zoom" not in technical_classes:
-            missing.append("technical-roadmap image must be wrapped in an <a class=\"figure-zoom\"> zoom link")
-        if technical_src not in technical_zoom_hrefs:
+
+    for src, context_classes in parser.img_context_classes:
+        if local_image_path(html_path, src) and "figure-panel" not in context_classes:
             missing.append(
-                "technical-roadmap zoom link href must point to the same full-resolution crop as the roadmap img src: "
-                f"{technical_src}"
+                "embedded local image is not inside .figure-panel, so click-to-enlarge cannot be attached: "
+                f"{src}"
             )
 
     for src in parser.img_srcs:

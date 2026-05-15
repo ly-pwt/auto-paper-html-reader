@@ -20,8 +20,8 @@ The final report must be a standalone HTML page with inline CSS and the followin
    - Embed the paper's primary technical-route image or architecture figure if available, using a local relative image path.
    - The embedded roadmap image must be a tight crop of the actual method overview / architecture / flowchart figure. It must not be an entire PDF page, whole browser viewport, desktop screenshot, or full paper page render.
    - Embed exactly one roadmap image in this section. Put additional examples, datasets, tables, ablations, or secondary diagrams in `section#figures`.
-   - The roadmap image must use `<figure class="figure-panel roadmap-figure">` and wrap the `<img>` in an `<a class="figure-zoom" href="same-image-src" target="_blank" rel="noopener">` so the reader can open the full-resolution crop and inspect small labels/arrows.
-   - Keep the in-page roadmap preview visually compact; the zoom link is the place for fine-grained inspection.
+   - The roadmap image must use `<figure class="figure-panel roadmap-figure">`. Do not wrap it in a new-tab link; the template lightbox must handle in-page click-to-enlarge and click-to-close behavior.
+   - Keep the in-page roadmap preview visually compact; the `image-lightbox` overlay is the place for fine-grained inspection.
    - If only a full page render is available, use it only as an intermediate artifact and crop the exact figure/table before embedding. If no tight crop is possible, do not embed the full page; explain the limitation in prose.
    - Use a visible flow of step cards, for example `input -> representation -> model/module -> training objective -> inference/selection -> output`.
    - For each step, explain:
@@ -95,6 +95,7 @@ The final report must be a standalone HTML page with inline CSS and the followin
    - Important figures/tables and why they matter.
    - Embed the important extracted figures/tables as images whenever browser-renderable.
    - Save extracted/cropped/user-provided images under `sources/<paper-slug>/figures/`.
+   - Every embedded figure/table image must live inside a `<figure class="figure-panel">` so the template can attach click-to-enlarge behavior.
    - Each embedded image must be a tight crop of the target figure/table, not an entire PDF page, browser viewport, or whole screen. This is mandatory.
    - Include the caption only when it helps identify the figure/table; otherwise keep the crop focused on the visual content.
    - If a source page contains multiple important figures/tables, crop and save them as separate files unless the paper itself presents them as one combined figure/table.
@@ -137,8 +138,9 @@ The final report must be a standalone HTML page with inline CSS and the followin
 - Include `<meta charset="utf-8">`.
 - Include a responsive layout that works on desktop and mobile.
 - Use a constrained reading width and tables with horizontal scroll.
-- Include CSS classes: `.meta-grid`, `.pill`, `.callout`, `.formula`, `.table-wrap`, `.claim`, `.author-view`, `.agent-view`, `.explainable-wrap`, `.plain-toggle`, `.plain-explanation`, `.roadmap`, `.roadmap-step`, `.figure-panel`, `.roadmap-figure`, `.figure-zoom`, `.figure-panel img`, `.figure-caption`, `.logic-timeline`, `.logic-step`, `.comparison-note`.
+- Include CSS classes: `.meta-grid`, `.pill`, `.callout`, `.formula`, `.table-wrap`, `.claim`, `.author-view`, `.agent-view`, `.explainable-wrap`, `.plain-toggle`, `.plain-explanation`, `.roadmap`, `.roadmap-step`, `.figure-panel`, `.roadmap-figure`, `.image-zoom`, `.image-lightbox`, `.image-lightbox-img`, `.figure-panel img`, `.figure-caption`, `.logic-timeline`, `.logic-step`, `.comparison-note`.
 - Include a small inline script that adds/toggles the plain-language explanation buttons for all `.explainable[data-plain]` elements.
+- Include a small inline script that turns every `.figure-panel img` into an in-page zoom trigger. Clicking the image opens the enlarged image in `.image-lightbox`; clicking the enlarged image, backdrop, close button, or pressing Escape closes it.
 - Use accessible color contrast.
 - Do not rely on external CDNs except optional MathJax. If MathJax is included, use the official CDN script and keep formulas readable without it.
 - Put local source links as relative paths from the project root.
