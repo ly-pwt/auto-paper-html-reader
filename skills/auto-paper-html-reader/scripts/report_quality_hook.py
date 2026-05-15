@@ -17,6 +17,11 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlparse
 
+try:
+    from PIL import Image
+except Exception:  # pragma: no cover - optional dependency
+    Image = None
+
 
 REQUIRED_SECTIONS = [
     "summary",
@@ -96,6 +101,13 @@ def local_image_exists(html_path: Path, src: str) -> bool:
     return (html_path.parent / src).exists()
 
 
+def local_image_path(html_path: Path, src: str) -> Path | None:
+    parsed = urlparse(src)
+    if parsed.scheme or src.startswith("#") or not src:
+        return None
+    return html_path.parent / src
+
+
 def count_wordsish(text: str) -> int:
     # Chinese text has no spaces, so mix rough CJK chars and word chunks.
     cjk = len(re.findall(r"[\u4e00-\u9fff]", text))
@@ -130,6 +142,26 @@ def validate(html_path: Path) -> dict[str, object]:
     broken_images = [src for src in parser.img_srcs if not local_image_exists(html_path, src)]
     if broken_images:
         missing.append("broken local image links: " + ", ".join(broken_images))
+
+    if Image is not None:
+        for src in parser.img_srcs:
+            img_path = local_image_path(html_path, src)
+            if not img_path or not img_path.exists():
+                continue
+            try:
+                with Image.open(img_path) as im:
+                    width, height = im.size
+            except Exception:
+                continue
+            aspect = width / max(height, 1)
+            # Warn on common full-page/viewport screenshots. This is heuristic:
+            # it prompts a crop review, but does not fail the report by itself.
+            if (height >= 1400 and 0.55 <= aspect <= 0.9) or (width >= 1600 and height >= 900):
+                warnings.append(
+                    f"image may be a full page/viewport rather than a tight figure crop: {src} ({width}x{height})"
+                )
+    else:
+        warnings.append("Pillow not available; skipped image crop heuristics")
 
     if parser.tables < 2:
         missing.append(f"too few comparison/result tables: {parser.tables} < 2")

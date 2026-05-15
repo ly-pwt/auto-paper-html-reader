@@ -18,6 +18,7 @@ Use this skill to turn one paper into a structured Chinese HTML reading report. 
 - Every substantive paragraph in the report must have a nearby "大白话" button. Implement this by wrapping paragraphs with `class="explainable"` and adding a `data-plain` attribute containing a plain-language explanation of that paragraph.
 - Add a dedicated technical-roadmap section that explains the paper's main technical pipeline in detail, including inputs, modules, training/inference flow, outputs, and where the key technical risk lives.
 - Extract and embed the paper's key technical figures/tables into the HTML whenever possible. Do not merely describe major figures in prose. Save figure assets under `sources/<paper-slug>/figures/` and reference them with relative paths.
+- Crop figure/table assets precisely. Do not save an entire PDF page, browser viewport, or screenshot when only one figure/table is needed. Each image file should contain only the target figure/table plus its caption if useful for context.
 - Add a dedicated related-work comparison section. It must compare the paper against closest prior work, strong baselines, benchmark/dataset papers, and infrastructure/foundation papers that the work builds on. Analyze both similarities and differences instead of only listing citations.
 - Add a dedicated writing-logic section. It must explain the paper's rhetorical structure: how the introduction sets up the problem, how related work narrows the gap, how method sections answer the gap, how experiments support the claims, and where the paper's strongest narrative turns happen.
 
@@ -42,7 +43,10 @@ Read [references/report-contract.md](references/report-contract.md) before writi
    - Read introduction, related work, method, experiments, limitations, and conclusion.
    - Inspect figures and tables when available; architecture diagrams and result tables often carry critical information.
    - Identify the key figures/tables that explain the paper's task, dataset construction, model architecture, training data, augmentation, inference pipeline, and main results.
-   - Extract or render those key figures/tables into browser-viewable image files under `sources/<paper-slug>/figures/`. If exact extraction is hard, use a page crop or user-provided screenshot. Preserve figure/table numbers in filenames when possible.
+   - Extract or render those key figures/tables into browser-viewable image files under `sources/<paper-slug>/figures/`. Preserve figure/table numbers in filenames when possible.
+   - Use tight crops: include the target Figure/Table and optionally its caption, but exclude unrelated page text, neighboring figures, browser chrome, desktop background, and full-page whitespace.
+   - If exact extraction is hard, use a page crop or user-provided screenshot, then crop that image down to the needed figure/table before embedding it.
+   - If one screenshot contains multiple needed figures/tables, split it into separate cropped image files when the report discusses them separately.
    - Extract key formulas faithfully, preserving the paper's notation in LaTeX.
 
 4. Analyze context and novelty.

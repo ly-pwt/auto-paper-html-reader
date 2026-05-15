@@ -90,13 +90,16 @@ The final report must be a standalone HTML page with inline CSS and the followin
    - Important figures/tables and why they matter.
    - Embed the important extracted figures/tables as images whenever browser-renderable.
    - Save extracted/cropped/user-provided images under `sources/<paper-slug>/figures/`.
+   - Each embedded image must be a tight crop of the target figure/table, not an entire PDF page, browser viewport, or whole screen.
+   - Include the caption only when it helps identify the figure/table; otherwise keep the crop focused on the visual content.
+   - If a source page contains multiple important figures/tables, crop and save them as separate files unless the paper itself presents them as one combined figure/table.
    - For each figure/table, include:
      - Local image.
      - Figure/table number and original caption if available.
      - What the reader should look at first.
      - Detailed technical explanation.
      - One `p.explainable[data-plain]` plain-language explanation.
-   - If a source figure is PDF-only or unavailable, create a page crop or screenshot when possible. Only fall back to prose when extraction/rendering is impossible.
+   - If a source figure is PDF-only or unavailable, create a page crop or screenshot when possible, then crop tightly to the relevant figure/table. Only fall back to prose when extraction/rendering is impossible.
 
 12. `section#code-observations`
     - Include only when code was found.
