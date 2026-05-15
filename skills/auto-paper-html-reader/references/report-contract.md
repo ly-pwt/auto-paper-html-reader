@@ -90,7 +90,7 @@ The final report must be a standalone HTML page with inline CSS and the followin
    - Important figures/tables and why they matter.
    - Embed the important extracted figures/tables as images whenever browser-renderable.
    - Save extracted/cropped/user-provided images under `sources/<paper-slug>/figures/`.
-   - Each embedded image must be a tight crop of the target figure/table, not an entire PDF page, browser viewport, or whole screen.
+   - Each embedded image must be a tight crop of the target figure/table, not an entire PDF page, browser viewport, or whole screen. This is mandatory.
    - Include the caption only when it helps identify the figure/table; otherwise keep the crop focused on the visual content.
    - If a source page contains multiple important figures/tables, crop and save them as separate files unless the paper itself presents them as one combined figure/table.
    - For each figure/table, include:
@@ -99,7 +99,8 @@ The final report must be a standalone HTML page with inline CSS and the followin
      - What the reader should look at first.
      - Detailed technical explanation.
      - One `p.explainable[data-plain]` plain-language explanation.
-   - If a source figure is PDF-only or unavailable, create a page crop or screenshot when possible, then crop tightly to the relevant figure/table. Only fall back to prose when extraction/rendering is impossible.
+   - If a source figure is PDF-only or unavailable, create a page render or screenshot only as an intermediate artifact, then crop tightly to the relevant figure/table before embedding it.
+   - Do not embed intermediate full-page renders. If no tight crop can be created after reasonable effort, omit the image and state the limitation in prose.
 
 12. `section#code-observations`
     - Include only when code was found.
@@ -153,5 +154,5 @@ python3 skills/auto-paper-html-reader/scripts/report_quality_hook.py <report.htm
 ```
 
 - Treat a nonzero exit as a required revision request.
-- Use the hook output as a checklist, then edit the HTML to add missing substantive sections/content.
+- Use the hook output as a checklist, then edit the HTML to add missing substantive sections/content or replace suspected full-page/viewport images with tight figure/table crops.
 - Rerun the hook until it passes before delivery.

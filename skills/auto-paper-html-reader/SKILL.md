@@ -18,7 +18,9 @@ Use this skill to turn one paper into a structured Chinese HTML reading report. 
 - Every substantive paragraph in the report must have a nearby "大白话" button. Implement this by wrapping paragraphs with `class="explainable"` and adding a `data-plain` attribute containing a plain-language explanation of that paragraph.
 - Add a dedicated technical-roadmap section that explains the paper's main technical pipeline in detail, including inputs, modules, training/inference flow, outputs, and where the key technical risk lives.
 - Extract and embed the paper's key technical figures/tables into the HTML whenever possible. Do not merely describe major figures in prose. Save figure assets under `sources/<paper-slug>/figures/` and reference them with relative paths.
-- Crop figure/table assets precisely. Do not save an entire PDF page, browser viewport, or screenshot when only one figure/table is needed. Each image file should contain only the target figure/table plus its caption if useful for context.
+- Crop figure/table assets precisely. This is a hard requirement, not a preference. Do not save or embed an entire PDF page, browser viewport, desktop screenshot, or whole paper page when only one figure/table is needed. Each image file must contain only the target figure/table plus its caption if useful for context.
+- If exact extraction is hard, first render the page or take a screenshot only as an intermediate source, then crop that intermediate image down to the specific figure/table before embedding. Never embed the intermediate full-page render in the final report.
+- If a figure/table cannot be cropped tightly after reasonable effort, omit the image and explain the limitation in prose rather than embedding a full-page render.
 - Add a dedicated related-work comparison section. It must compare the paper against closest prior work, strong baselines, benchmark/dataset papers, and infrastructure/foundation papers that the work builds on. Analyze both similarities and differences instead of only listing citations.
 - Add a dedicated writing-logic section. It must explain the paper's rhetorical structure: how the introduction sets up the problem, how related work narrows the gap, how method sections answer the gap, how experiments support the claims, and where the paper's strongest narrative turns happen.
 
@@ -43,7 +45,7 @@ Read [references/report-contract.md](references/report-contract.md) before writi
    - Read introduction, related work, method, experiments, limitations, and conclusion.
    - Inspect figures and tables when available; architecture diagrams and result tables often carry critical information.
    - Identify the key figures/tables that explain the paper's task, dataset construction, model architecture, training data, augmentation, inference pipeline, and main results.
-   - Extract or render those key figures/tables into browser-viewable image files under `sources/<paper-slug>/figures/`. Preserve figure/table numbers in filenames when possible.
+   - Extract or render those key figures/tables into browser-viewable image files under `sources/<paper-slug>/figures/`. Preserve figure/table numbers in filenames when possible, and include words such as `figure`, `table`, or `crop` in filenames to make the intent obvious.
    - Use tight crops: include the target Figure/Table and optionally its caption, but exclude unrelated page text, neighboring figures, browser chrome, desktop background, and full-page whitespace.
    - If exact extraction is hard, use a page crop or user-provided screenshot, then crop that image down to the needed figure/table before embedding it.
    - If one screenshot contains multiple needed figures/tables, split it into separate cropped image files when the report discusses them separately.
@@ -79,7 +81,8 @@ Read [references/report-contract.md](references/report-contract.md) before writi
 7. Run the report quality hook.
    - After writing the HTML, run:
      `python3 skills/auto-paper-html-reader/scripts/report_quality_hook.py <report.html>`
-   - If the hook reports missing sections, missing figures, too few `data-plain` explanations, thin sections, broken local images, or too few tables, edit the HTML to add the missing substantive content.
+   - If the hook reports missing sections, missing figures, too few `data-plain` explanations, thin sections, broken local images, too few tables, or suspected full-page/viewport images, edit the HTML and figure assets to fix the issue.
+   - A suspected full-page/viewport image is a failing error. Replace it with a tight crop of the corresponding figure/table and rerun the hook.
    - Rerun the hook after each edit. Do not deliver the report until the hook passes, unless the user explicitly asks to stop early.
 
 8. Verify delivery.

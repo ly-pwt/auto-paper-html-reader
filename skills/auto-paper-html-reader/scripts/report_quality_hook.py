@@ -2,9 +2,10 @@
 """Validate auto-paper-html-reader HTML reports.
 
 This hook is intentionally deterministic: it checks whether the generated HTML
-contains the structural pieces required by the skill contract. When it fails,
-Codex should edit the report to add the missing substantive content and rerun
-this hook until it passes.
+contains the structural pieces required by the skill contract. It also rejects
+embedded images that look like full PDF pages or browser viewports, because the
+report must use tight crops of the corresponding figures/tables. When it fails,
+Codex should edit the report and assets, then rerun this hook until it passes.
 """
 
 from __future__ import annotations
@@ -154,11 +155,16 @@ def validate(html_path: Path) -> dict[str, object]:
             except Exception:
                 continue
             aspect = width / max(height, 1)
-            # Warn on common full-page/viewport screenshots. This is heuristic:
-            # it prompts a crop review, but does not fail the report by itself.
-            if (height >= 1400 and 0.55 <= aspect <= 0.9) or (width >= 1600 and height >= 900):
-                warnings.append(
-                    f"image may be a full page/viewport rather than a tight figure crop: {src} ({width}x{height})"
+            # Fail on common full-page/viewport screenshots. This is heuristic,
+            # but the skill contract requires tight crops; suspected full-page
+            # renders must be replaced by figure/table-specific crops before
+            # delivery.
+            looks_like_pdf_page = height >= 1100 and 0.55 <= aspect <= 0.9
+            looks_like_viewport = width >= 1200 and height >= 650 and 1.25 <= aspect <= 2.2
+            if looks_like_pdf_page or looks_like_viewport:
+                missing.append(
+                    "suspected full-page/viewport image; replace with a tight figure/table crop: "
+                    f"{src} ({width}x{height})"
                 )
     else:
         warnings.append("Pillow not available; skipped image crop heuristics")
@@ -197,7 +203,7 @@ def validate(html_path: Path) -> dict[str, object]:
             "plain_language_blocks": parser.data_plain_count,
         },
         "next_action": (
-            "Edit the HTML to add the missing sections/content, then rerun this hook."
+            "Edit the HTML/assets to fix missing content or replace full-page images with tight crops, then rerun this hook."
             if missing
             else "Report satisfies the structural skill contract."
         ),
