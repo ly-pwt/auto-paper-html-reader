@@ -52,6 +52,8 @@ REQUIRED_TOKENS = [
     "writing-logic",
     "logic-timeline",
     "figure-panel",
+    "roadmap-figure",
+    "figure-zoom",
     "roadmap-step",
 ]
 
@@ -63,6 +65,8 @@ class ReportParser(HTMLParser):
         self.classes: set[str] = set()
         self.img_srcs: list[str] = []
         self.section_img_srcs: dict[str, list[str]] = {}
+        self.section_classes: dict[str, set[str]] = {}
+        self.section_zoom_hrefs: dict[str, list[str]] = {}
         self.tables = 0
         self.data_plain_count = 0
         self.current_section: str | None = None
@@ -70,15 +74,20 @@ class ReportParser(HTMLParser):
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attrs_dict = {key: value or "" for key, value in attrs}
+        tag_classes = attrs_dict.get("class", "").split()
         if "id" in attrs_dict:
             self.ids.add(attrs_dict["id"])
         if "class" in attrs_dict:
-            for cls in attrs_dict["class"].split():
+            for cls in tag_classes:
                 self.classes.add(cls)
         if tag == "section":
             self.current_section = attrs_dict.get("id")
             if self.current_section:
                 self.section_text.setdefault(self.current_section, [])
+        if self.current_section:
+            self.section_classes.setdefault(self.current_section, set()).update(tag_classes)
+            if tag == "a" and "figure-zoom" in tag_classes:
+                self.section_zoom_hrefs.setdefault(self.current_section, []).append(attrs_dict.get("href", ""))
         if tag == "img":
             src = attrs_dict.get("src", "")
             self.img_srcs.append(src)
@@ -212,6 +221,24 @@ def validate(html_path: Path) -> dict[str, object]:
     technical_imgs = parser.section_img_srcs.get("technical-roadmap", [])
     if not technical_imgs:
         missing.append("missing embedded technical-roadmap image; use a tight crop of the method/architecture figure when available")
+    elif len(technical_imgs) != 1:
+        missing.append(
+            "technical-roadmap must contain exactly one main roadmap image; move secondary figures/tables to #figures: "
+            + ", ".join(technical_imgs)
+        )
+    else:
+        technical_src = technical_imgs[0]
+        technical_classes = parser.section_classes.get("technical-roadmap", set())
+        technical_zoom_hrefs = parser.section_zoom_hrefs.get("technical-roadmap", [])
+        if "roadmap-figure" not in technical_classes:
+            missing.append("technical-roadmap image must be inside <figure class=\"figure-panel roadmap-figure\">")
+        if "figure-zoom" not in technical_classes:
+            missing.append("technical-roadmap image must be wrapped in an <a class=\"figure-zoom\"> zoom link")
+        if technical_src not in technical_zoom_hrefs:
+            missing.append(
+                "technical-roadmap zoom link href must point to the same full-resolution crop as the roadmap img src: "
+                f"{technical_src}"
+            )
 
     for src in parser.img_srcs:
         img_path = local_image_path(html_path, src)

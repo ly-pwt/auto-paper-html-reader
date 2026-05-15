@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{TITLE}}</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f7f4;
+      --paper: #ffffff;
+      --ink: #1d2329;
+      --muted: #5f6872;
+      --line: #d8ddd8;
+      --accent: #1d6f68;
+      --accent-soft: #e5f3ef;
+      --warn-soft: #fff2d8;
+      --code: #f1f3f5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+      line-height: 1.65;
+    }
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 56px;
+    }
+    header, section {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 0 0 16px;
+    }
+    h1, h2, h3 { line-height: 1.25; margin: 0 0 14px; letter-spacing: 0; }
+    h1 { font-size: clamp(28px, 4vw, 44px); }
+    h2 { font-size: 24px; padding-top: 4px; }
+    h3 { font-size: 18px; margin-top: 18px; }
+    p { margin: 0 0 12px; }
+    a { color: var(--accent); }
+    ul { padding-left: 20px; }
+    li { margin: 6px 0; }
+    code, pre {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: var(--code);
+      border-radius: 6px;
+    }
+    code { padding: 2px 5px; }
+    pre { padding: 14px; overflow: auto; }
+    .subtitle { color: var(--muted); font-size: 18px; margin-top: 8px; }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .meta-grid div {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      min-width: 0;
+    }
+    .label {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+    .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #124c47;
+      font-size: 13px;
+      border: 1px solid #b9ded7;
+    }
+    .callout, .claim, .author-view, .agent-view {
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+      padding: 12px 14px;
+      border-radius: 6px;
+      margin: 12px 0;
+    }
+    .claim { border-left-color: #6a5acd; background: #eeecff; }
+    .author-view { border-left-color: #2f6f9f; background: #eaf4fb; }
+    .agent-view { border-left-color: #8a5a00; background: var(--warn-soft); }
+    .formula {
+      overflow-x: auto;
+      padding: 14px;
+      margin: 12px 0;
+      border-radius: 8px;
+      background: #f5f7fa;
+      border: 1px solid var(--line);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .explainable-wrap {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: start;
+      margin: 0 0 12px;
+    }
+    .explainable-wrap > p { margin: 0; }
+    .plain-toggle {
+      appearance: none;
+      border: 1px solid #b9ded7;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #124c47;
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      min-height: 30px;
+      padding: 4px 10px;
+      white-space: nowrap;
+    }
+    .plain-toggle:hover { border-color: var(--accent); }
+    .plain-explanation {
+      grid-column: 1 / -1;
+      display: none;
+      border-left: 4px solid #8a5a00;
+      background: var(--warn-soft);
+      border-radius: 6px;
+      padding: 12px 14px;
+      color: #3c2b00;
+    }
+    .plain-explanation.is-open { display: block; }
+    .roadmap {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin: 14px 0;
+    }
+    .roadmap-step {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fbfcfb;
+    }
+    .roadmap-step strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--accent);
+    }
+    .figure-panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      margin: 14px 0;
+      background: #fbfcfb;
+    }
+    .figure-panel img {
+      display: block;
+      width: 100%;
+      max-height: 720px;
+      object-fit: contain;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      margin-bottom: 10px;
+    }
+    .roadmap-figure {
+      overflow: hidden;
+    }
+    .roadmap-figure .figure-zoom {
+      display: block;
+      color: inherit;
+      text-decoration: none;
+    }
+    .roadmap-figure img {
+      width: auto;
+      max-width: 100%;
+      max-height: min(62vh, 560px);
+      margin: 0 auto 10px;
+      cursor: zoom-in;
+    }
+    .figure-zoom:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 3px;
+      border-radius: 8px;
+    }
+    .figure-caption {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    .logic-timeline {
+      display: grid;
+      gap: 10px;
+      margin: 14px 0;
+    }
+    .logic-step {
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--accent);
+      border-radius: 8px;
+      padding: 12px 14px;
+      background: #fbfcfb;
+    }
+    .logic-step strong {
+      display: block;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    .comparison-note {
+      border-left: 4px solid #6a5acd;
+      background: #eeecff;
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin: 12px 0;
+    }
+    .table-wrap { overflow-x: auto; margin: 12px 0; }
+    table { width: 100%; border-collapse: collapse; min-width: 640px; }
+    th, td { border: 1px solid var(--line); padding: 10px; text-align: left; vertical-align: top; }
+    th { background: #eef1ee; }
+    footer { color: var(--muted); text-align: center; padding: 16px 0 0; font-size: 13px; }
+    @media (max-width: 640px) {
+      main { width: min(100% - 20px, 1120px); padding-top: 16px; }
+      header, section { padding: 18px; }
+      h1 { font-size: 28px; }
+      h2 { font-size: 21px; }
+    }
+  </style>
+  <script>
+    window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }, svg: { fontCache: 'global' } };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>{{TITLE}}</h1>
+      <p class="subtitle">{{ORIGINAL_TITLE}}</p>
+      <div class="pill-row">
+        <span class="pill">{{SOURCE_STATUS}}</span>
+        <span class="pill">{{CODE_STATUS}}</span>
+        <span class="pill">{{CONFIDENCE}}</span>
+      </div>
+      <div class="meta-grid">
+        <div><span class="label">作者</span>{{AUTHORS}}</div>
+        <div><span class="label">单位</span>{{AFFILIATIONS}}</div>
+        <div><span class="label">日期 / 版本</span>{{DATE_VERSION}}</div>
+        <div><span class="label">链接</span>{{LINKS}}</div>
+      </div>
+    </header>
+
+    {{REPORT_SECTIONS}}
+
+    <footer>Generated by Codex with the auto-paper-html-reader skill.</footer>
+  </main>
+  <script>
+    document.querySelectorAll('.explainable[data-plain]').forEach((paragraph, index) => {
+      if (paragraph.parentElement && paragraph.parentElement.classList.contains('explainable-wrap')) return;
+      const wrapper = document.createElement('div');
+      wrapper.className = 'explainable-wrap';
+      paragraph.parentNode.insertBefore(wrapper, paragraph);
+      wrapper.appendChild(paragraph);
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'plain-toggle';
+      button.setAttribute('aria-expanded', 'false');
+      button.setAttribute('aria-controls', `plain-explanation-${index}`);
+      button.textContent = '大白话';
+
+      const explanation = document.createElement('div');
+      explanation.className = 'plain-explanation';
+      explanation.id = `plain-explanation-${index}`;
+      explanation.textContent = paragraph.dataset.plain;
+
+      button.addEventListener('click', () => {
+        const isOpen = explanation.classList.toggle('is-open');
+        button.setAttribute('aria-expanded', String(isOpen));
+        button.textContent = isOpen ? '收起' : '大白话';
+      });
+
+      wrapper.appendChild(button);
+      wrapper.appendChild(explanation);
+    });
+  </script>
+</body>
+</html>

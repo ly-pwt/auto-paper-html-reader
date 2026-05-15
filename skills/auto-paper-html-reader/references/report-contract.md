@@ -19,6 +19,9 @@ The final report must be a standalone HTML page with inline CSS and the followin
    - A standalone, detailed explanation of the paper's main technical route.
    - Embed the paper's primary technical-route image or architecture figure if available, using a local relative image path.
    - The embedded roadmap image must be a tight crop of the actual method overview / architecture / flowchart figure. It must not be an entire PDF page, whole browser viewport, desktop screenshot, or full paper page render.
+   - Embed exactly one roadmap image in this section. Put additional examples, datasets, tables, ablations, or secondary diagrams in `section#figures`.
+   - The roadmap image must use `<figure class="figure-panel roadmap-figure">` and wrap the `<img>` in an `<a class="figure-zoom" href="same-image-src" target="_blank" rel="noopener">` so the reader can open the full-resolution crop and inspect small labels/arrows.
+   - Keep the in-page roadmap preview visually compact; the zoom link is the place for fine-grained inspection.
    - If only a full page render is available, use it only as an intermediate artifact and crop the exact figure/table before embedding. If no tight crop is possible, do not embed the full page; explain the limitation in prose.
    - Use a visible flow of step cards, for example `input -> representation -> model/module -> training objective -> inference/selection -> output`.
    - For each step, explain:
@@ -134,7 +137,7 @@ The final report must be a standalone HTML page with inline CSS and the followin
 - Include `<meta charset="utf-8">`.
 - Include a responsive layout that works on desktop and mobile.
 - Use a constrained reading width and tables with horizontal scroll.
-- Include CSS classes: `.meta-grid`, `.pill`, `.callout`, `.formula`, `.table-wrap`, `.claim`, `.author-view`, `.agent-view`, `.explainable-wrap`, `.plain-toggle`, `.plain-explanation`, `.roadmap`, `.roadmap-step`, `.figure-panel`, `.figure-panel img`, `.figure-caption`, `.logic-timeline`, `.logic-step`, `.comparison-note`.
+- Include CSS classes: `.meta-grid`, `.pill`, `.callout`, `.formula`, `.table-wrap`, `.claim`, `.author-view`, `.agent-view`, `.explainable-wrap`, `.plain-toggle`, `.plain-explanation`, `.roadmap`, `.roadmap-step`, `.figure-panel`, `.roadmap-figure`, `.figure-zoom`, `.figure-panel img`, `.figure-caption`, `.logic-timeline`, `.logic-step`, `.comparison-note`.
 - Include a small inline script that adds/toggles the plain-language explanation buttons for all `.explainable[data-plain]` elements.
 - Use accessible color contrast.
 - Do not rely on external CDNs except optional MathJax. If MathJax is included, use the official CDN script and keep formulas readable without it.

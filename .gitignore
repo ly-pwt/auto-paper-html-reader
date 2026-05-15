@@ -7,4 +7,6 @@ __pycache__/
 *.html
 sources/
 assets/
+!skills/*/assets/
+!skills/*/assets/**
 main.py
