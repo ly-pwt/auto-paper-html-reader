@@ -18,6 +18,8 @@ The final report must be a standalone HTML page with inline CSS and the followin
 3. `section#technical-roadmap`
    - A standalone, detailed explanation of the paper's main technical route.
    - Embed the paper's primary technical-route image or architecture figure if available, using a local relative image path.
+   - The embedded roadmap image must be a tight crop of the actual method overview / architecture / flowchart figure. It must not be an entire PDF page, whole browser viewport, desktop screenshot, or full paper page render.
+   - If only a full page render is available, use it only as an intermediate artifact and crop the exact figure/table before embedding. If no tight crop is possible, do not embed the full page; explain the limitation in prose.
    - Use a visible flow of step cards, for example `input -> representation -> model/module -> training objective -> inference/selection -> output`.
    - For each step, explain:
      - What enters this step.

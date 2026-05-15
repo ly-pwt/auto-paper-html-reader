@@ -11,6 +11,7 @@ Codex should edit the report and assets, then rerun this hook until it passes.
 from __future__ import annotations
 
 import argparse
+import struct
 import json
 import re
 import sys
@@ -61,6 +62,7 @@ class ReportParser(HTMLParser):
         self.ids: set[str] = set()
         self.classes: set[str] = set()
         self.img_srcs: list[str] = []
+        self.section_img_srcs: dict[str, list[str]] = {}
         self.tables = 0
         self.data_plain_count = 0
         self.current_section: str | None = None
@@ -78,7 +80,10 @@ class ReportParser(HTMLParser):
             if self.current_section:
                 self.section_text.setdefault(self.current_section, [])
         if tag == "img":
-            self.img_srcs.append(attrs_dict.get("src", ""))
+            src = attrs_dict.get("src", "")
+            self.img_srcs.append(src)
+            if self.current_section:
+                self.section_img_srcs.setdefault(self.current_section, []).append(src)
         if tag == "table":
             self.tables += 1
         if "data-plain" in attrs_dict:
@@ -107,6 +112,66 @@ def local_image_path(html_path: Path, src: str) -> Path | None:
     if parsed.scheme or src.startswith("#") or not src:
         return None
     return html_path.parent / src
+
+
+def image_size(path: Path) -> tuple[int, int] | None:
+    if Image is not None:
+        try:
+            with Image.open(path) as im:
+                return im.size
+        except Exception:
+            pass
+
+    try:
+        data = path.read_bytes()
+    except Exception:
+        return None
+
+    # PNG: signature + IHDR width/height.
+    if data.startswith(b"\x89PNG\r\n\x1a\n") and len(data) >= 24:
+        width, height = struct.unpack(">II", data[16:24])
+        return int(width), int(height)
+
+    # GIF.
+    if (data.startswith(b"GIF87a") or data.startswith(b"GIF89a")) and len(data) >= 10:
+        width, height = struct.unpack("<HH", data[6:10])
+        return int(width), int(height)
+
+    # JPEG: walk SOF markers.
+    if data.startswith(b"\xff\xd8"):
+        i = 2
+        while i + 9 < len(data):
+            if data[i] != 0xFF:
+                i += 1
+                continue
+            marker = data[i + 1]
+            i += 2
+            if marker in (0xD8, 0xD9):
+                continue
+            if i + 2 > len(data):
+                return None
+            length = struct.unpack(">H", data[i : i + 2])[0]
+            if length < 2 or i + length > len(data):
+                return None
+            if marker in (0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF):
+                height = struct.unpack(">H", data[i + 3 : i + 5])[0]
+                width = struct.unpack(">H", data[i + 5 : i + 7])[0]
+                return int(width), int(height)
+            i += length
+    return None
+
+
+def looks_like_full_page_or_viewport(width: int, height: int) -> bool:
+    aspect = width / max(height, 1)
+    looks_like_pdf_page = height >= 1100 and 0.55 <= aspect <= 0.9
+    looks_like_viewport = width >= 1200 and height >= 650 and 1.25 <= aspect <= 2.2
+    return looks_like_pdf_page or looks_like_viewport
+
+
+def suspicious_image_name(src: str) -> bool:
+    name = Path(src).name.lower()
+    bad_terms = ["full-page", "fullpage", "whole-page", "page-render", "viewport", "screenshot", "screen-shot", "desktop"]
+    return any(term in name for term in bad_terms)
 
 
 def count_wordsish(text: str) -> int:
@@ -144,30 +209,25 @@ def validate(html_path: Path) -> dict[str, object]:
     if broken_images:
         missing.append("broken local image links: " + ", ".join(broken_images))
 
-    if Image is not None:
-        for src in parser.img_srcs:
-            img_path = local_image_path(html_path, src)
-            if not img_path or not img_path.exists():
-                continue
-            try:
-                with Image.open(img_path) as im:
-                    width, height = im.size
-            except Exception:
-                continue
-            aspect = width / max(height, 1)
-            # Fail on common full-page/viewport screenshots. This is heuristic,
-            # but the skill contract requires tight crops; suspected full-page
-            # renders must be replaced by figure/table-specific crops before
-            # delivery.
-            looks_like_pdf_page = height >= 1100 and 0.55 <= aspect <= 0.9
-            looks_like_viewport = width >= 1200 and height >= 650 and 1.25 <= aspect <= 2.2
-            if looks_like_pdf_page or looks_like_viewport:
-                missing.append(
-                    "suspected full-page/viewport image; replace with a tight figure/table crop: "
-                    f"{src} ({width}x{height})"
-                )
-    else:
-        warnings.append("Pillow not available; skipped image crop heuristics")
+    technical_imgs = parser.section_img_srcs.get("technical-roadmap", [])
+    if not technical_imgs:
+        missing.append("missing embedded technical-roadmap image; use a tight crop of the method/architecture figure when available")
+
+    for src in parser.img_srcs:
+        img_path = local_image_path(html_path, src)
+        if not img_path or not img_path.exists():
+            continue
+        size = image_size(img_path)
+        if size is None:
+            warnings.append(f"could not read image dimensions for crop check: {src}")
+            continue
+        width, height = size
+        if looks_like_full_page_or_viewport(width, height) or suspicious_image_name(src):
+            location = " in #technical-roadmap" if src in technical_imgs else ""
+            missing.append(
+                f"suspected full-page/viewport image{location}; replace with a tight figure/table crop: "
+                f"{src} ({width}x{height})"
+            )
 
     if parser.tables < 2:
         missing.append(f"too few comparison/result tables: {parser.tables} < 2")
